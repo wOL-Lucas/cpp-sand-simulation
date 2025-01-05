@@ -2,13 +2,16 @@
 #include <winuser.h>
 #include <windowsx.h>
 #include <vector>
+#include <random>
 
-
-const int sandSize = 10;
+const int sandSize = 6;
 int gridWidth;
 int gridHeight;
 
 std::vector<std::vector<bool>> grid;
+std::random_device rd;
+std::mt19937 gen(rd());
+std::uniform_int_distribution<> dis(0, 1);
 
 
 void initializeGrid(int width, int height) {
@@ -27,15 +30,27 @@ void updateGrid() {
           grid[y][x] = false;
         }
 
-        else if(y + 2 < gridHeight && grid[y + 2][x]){
-          if(x + 1 < gridWidth) {
-            if(!grid[y + 1][x + 1]) {
+        else if(y + 1 < gridHeight && grid[y + 1][x]){
+          
+          if(x - 1 >= 0 && x + 1 < gridWidth && !grid[y + 1][x - 1] && !grid[y + 1][x + 1] && y + 1 < gridHeight){
+    
+            int random =  dis(gen);
+            if(random > 0.5){
+              grid[y][x] = false;
+              grid[y + 1][x - 1] = true;
+            } else {
               grid[y][x] = false;
               grid[y + 1][x + 1] = true;
             }
-          } else if (x - 1 < gridWidth){
-              grid[y][x] = false;
-              grid[y + 1][x - 1] = true;
+
+          }
+
+          else if(x + 1 < gridWidth && !grid[y + 1][x + 1]) {
+            grid[y][x] = false;
+            grid[y + 1][x + 1] = true;
+          } else if (x - 1 < gridWidth && !grid[y + 1][x - 1]){
+            grid[y][x] = false;
+            grid[y + 1][x - 1] = true;
           }
         }
       }
@@ -104,7 +119,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         //This init the drawing context...
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
+
+        HDC hdcMem = CreateCompatibleDC(hdc);
+        RECT rect;
+        GetClientRect(hwnd, &rect);
+        HBITMAP hbmMem = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
         
+        SelectObject(hdcMem, hbmMem);
+
         for (int y = 0; y < gridHeight; y++) {
           for (int x = 0; x < gridWidth; x++) {
             if (grid[y][x]) {
@@ -113,7 +135,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
               rect.top = y * sandSize;
               rect.right = rect.left + sandSize;
               rect.bottom = rect.top + sandSize;
-              FillRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+              FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
             }
             else {
               RECT rect;
@@ -121,10 +143,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
               rect.top = y * sandSize;
               rect.right = rect.left + sandSize;
               rect.bottom = rect.top + sandSize;
-              FillRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+              FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
             }
           }
         }
+
+        BitBlt(hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY);
+
+        DeleteObject(hbmMem);
+        DeleteDC(hdcMem);
 
         EndPaint(hwnd, &ps);
         return 0;
