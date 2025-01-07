@@ -4,7 +4,7 @@
 #include <vector>
 #include <random>
 
-const int sandSize = 6;
+const int sandSize = 5;
 int gridWidth;
 int gridHeight;
 
@@ -48,7 +48,8 @@ void updateGrid() {
           else if(x + 1 < gridWidth && !grid[y + 1][x + 1]) {
             grid[y][x] = false;
             grid[y + 1][x + 1] = true;
-          } else if (x - 1 < gridWidth && !grid[y + 1][x - 1]){
+
+          } else if (x - 1 >= 0 && !grid[y + 1][x - 1]){
             grid[y][x] = false;
             grid[y + 1][x - 1] = true;
           }
@@ -62,11 +63,14 @@ int createSand(HWND hwnd, LPARAM lParam){
   int x = GET_X_LPARAM(lParam);
   int y = GET_Y_LPARAM(lParam);
 
+  if(x < 0 || y < 0){
+    return 0;
+  }
+
   int gridX = x / sandSize;
   int gridY = y / sandSize;
 
-  
-  if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) {
+  if (gridX < 0 || gridX > gridWidth || gridY < 0 || gridY > gridHeight) {
     return 0;
   }
 
@@ -108,10 +112,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
-        if(wParam & MK_LBUTTON) {
+        if (wParam & MK_LBUTTON) {
           createSand(hwnd, lParam);
         }
-
         return 0;
     }
 
@@ -130,20 +133,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         for (int y = 0; y < gridHeight; y++) {
           for (int x = 0; x < gridWidth; x++) {
+            RECT rect;
+            rect.left = x * sandSize;
+            rect.top = y * sandSize;
+            rect.right = rect.left + sandSize;
+            rect.bottom = rect.top + sandSize;
+
             if (grid[y][x]) {
-              RECT rect;
-              rect.left = x * sandSize;
-              rect.top = y * sandSize;
-              rect.right = rect.left + sandSize;
-              rect.bottom = rect.top + sandSize;
-              FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+                FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
             }
             else {
-              RECT rect;
-              rect.left = x * sandSize;
-              rect.top = y * sandSize;
-              rect.right = rect.left + sandSize;
-              rect.bottom = rect.top + sandSize;
               FillRect(hdcMem, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
             }
           }
