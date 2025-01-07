@@ -74,6 +74,7 @@ int createSand(HWND hwnd, LPARAM lParam){
   updateGrid();
 
   InvalidateRect(hwnd, NULL, FALSE);
+  return 0;
 
 }
 
